@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import easyocr
 
 # 페이지 설정
 st.set_page_config(
