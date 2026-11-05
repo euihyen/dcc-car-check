@@ -21,9 +21,6 @@ def load_data():
     df = pd.read_excel(purl)
     return df
 
-# 데이터 불러오기 테스트
-df = load_data()
-
 def load_data():
   try:
     df_jaegwa = pd.read_excel(purl, sheet_name="제과생산")
