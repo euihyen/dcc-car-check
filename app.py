@@ -77,8 +77,8 @@ else:
     # 엑셀 데이터와 대조    
     matched_row = None
     if df_cars is not None:
-          for index, row in df_cars.iterrows():
-          db_plate = str(row["번호판"]).replace(" ", "")
+        for index, row in df_cars.iterrows():
+            db_plate = str(row["번호판"]).replace(" ", "")
           # 인식된 텍스트 내에 DB 번호판이 포함되어 있거나 일치하는 경우
           if db_plate in cleaned_detected or cleaned_detected in db_plate:
             matched_row = row
