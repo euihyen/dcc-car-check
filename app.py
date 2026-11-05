@@ -98,7 +98,7 @@ else:
           st.write(f"**브랜드:** {matched_row['브랜드']}")
           st.write(f"**차종/종류:** {matched_row['종류']}")
           st.write(f"**등록 번호판:** {matched_row['번호판']}")
-      else:
+    else:
         st.error(
             "❌ **[미등록 차량(외부 차량)입니다]** 직원 차량 리스트에 일치하는"
             " 번호판이 없습니다."
