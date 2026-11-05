@@ -1,6 +1,3 @@
-import re
-import easyocr
-import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -11,15 +8,20 @@ st.set_page_config(
 
 st.title("🚗 DCC점 직원 차량 확인 프로그램")
 st.write(
-    "주차장 진입 차량의 번호판 사진을 업로드하면 직원 차량 여부를 실시간으로"
-    " 확인합니다."
+    "주차장 진입 차량의 번호판 사진을 업로드하면 직원 차량 여부를 실시간으로 확인합니다."
 )
 
 
 # 엑셀 데이터 로드 함수 (캐싱 적용)
 @st.cache_data
-purl = "DCC점_직원_소유_차량정보.xlsx"
+def load_data():
+    purl = "DCC점_직원_소유_차량정보.xlsx"
+    # 실제 엑셀 데이터를 읽어서 리턴하도록 수정하는 것을 추천합니다!
+    df = pd.read_excel(purl)
+    return df
 
+# 데이터 불러오기 테스트
+df = load_data()
 
 def load_data():
   try:
