@@ -81,8 +81,8 @@ else:
             db_plate = str(row["번호판"]).replace(" ", "")
           # 인식된 텍스트 내에 DB 번호판이 포함되어 있거나 일치하는 경우
             if db_plate in cleaned_detected or cleaned_detected in db_plate:
-            matched_row = row
-            break
+                matched_row = row
+                break
 
       # 결과 출력
       st.markdown("---")
