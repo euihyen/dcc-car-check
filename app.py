@@ -85,8 +85,8 @@ else:
                 break
 
       # 결과 출력
-      st.markdown("---")
-      st.subheader("📌 판정 결과")
+    st.markdown("---")
+    st.subheader("📌 판정 결과")
       if matched_row is not None:
         st.success("✅ **[등록된 직원 차량입니다]**")
         col1, col2 = st.columns(2)
