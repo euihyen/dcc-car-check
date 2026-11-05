@@ -13,14 +13,15 @@ st.write(
 )
 
 
-# 엑셀 데이터 로드 함수 (캐싱 적용)
+# 코드 위쪽에 함수와 상관없이 먼저 정의 (전역 변수)
+purl = "DCC점_직원_소유_차량정보.xlsx"
+
 @st.cache_data
 def load_data():
-    purl = "DCC점_직원_소유_차량정보.xlsx"
-    # 실제 엑셀 데이터를 읽어서 리턴하도록 수정하는 것을 추천합니다!
+    # 이제 함수 안에서도 밖에서 만든 purl을 가져다 쓸 수 있습니다.
     df = pd.read_excel(purl)
     return df
-
+    
 def load_data():
   try:
     df_jaegwa = pd.read_excel(purl, sheet_name="제과생산")
