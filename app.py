@@ -74,8 +74,8 @@ if uploaded_file is not None:
 else:
     st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 
-    # 엑셀 데이터와 대조
-      matched_row = None
+    # 엑셀 데이터와 대조    
+    matched_row = None
       if df_cars is not None:
         for idx, row in df_cars.iterrows():
           db_plate = str(row["번호판"]).replace(" ", "")
