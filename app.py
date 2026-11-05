@@ -52,31 +52,27 @@ def load_ocr_reader():
 with st.spinner("AI 번호판 인식 모델을 불러오는 중입니다... 잠시만 기다려주세요."):
   reader = load_ocr_reader()
 
-# 파일 업로드 위젯
-uploaded_file = st.file_uploader(
-    "차량 번호판 사진을 업로드하세요", type=["jpg", "jpeg", "png"]
-)
+import streamlit as st
+import numpy as np
+import cv2
 
+# 파일 업로더 생성
+uploaded_file = st.file_uploader("차량 번호판 사진을 업로드하세요", type=["jpg", "jpeg", "png"])
+
+# 💡 핵심: uploaded_file이 None이 아닐 때(즉, 파일이 업로드되었을 때)만 실행되도록 처리!
 if uploaded_file is not None:
-  # 이미지 표시
-  file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-  st.image(
-      file_bytes, caption="업로드된 차량 이미지", use_column_width=True
-  )
-
-  if st.button("🔍 번호판 인식 및 직원 확인"):
-    with st.spinner("번호판을 분석하고 있습니다..."):
-      # OCR 수행
-      results = reader.readtext(file_bytes)
-
-      detected_texts = [res[1] for res in results]
-      full_text = "".join(detected_texts)
-
-      # 공백 제거 및 번호판 패턴 추출 (예: 숫자+한글+숫자 조합)
-      # 간단하게 전체 텍스트에서 공백을 제거한 문자열 활용
-      cleaned_detected = full_text.replace(" ", "")
-
-      st.info(f"인식된 텍스트: {full_text} (정제: {cleaned_detected})")
+    # 파일을 읽어서 바이트 배열로 변환
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    
+    # 이미지를 OpenCV로 읽기
+    image = cv2.imdecode(file_bytes, 1)
+    
+    # 화면에 업로드된 이미지 보여주기
+    st.image(image, channels="BGR", caption="업로드한 사진")
+    
+    # 여기에 OCR 분석 및 직원 차량 확인 코드가 들어가면 됩니다!
+else:
+    st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 
       # 엑셀 데이터와 대조
       matched_row = None
