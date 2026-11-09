@@ -74,8 +74,7 @@ if uploaded_file is not None:
 else:
     st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 
-    st.write("엑셀 파일에 들어있는 컬럼 목록:", df_cars.columns.tolist())
-    # 엑셀 데이터와 대조    
+       # 엑셀 데이터와 대조    
     matched_row = None
     if df_cars is not None:
         for index, row in df_cars.iterrows():
