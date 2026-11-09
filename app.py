@@ -69,17 +69,18 @@ if uploaded_file is not None:
     
     # 화면에 업로드된 이미지 보여주기
     st.image(image, channels="BGR", caption="업로드한 사진")
-    
+    # 💡 2. [핵심] EasyOCR로 번호판 텍스트를 읽고 cleaned_detected 변수 만들기
     ocr_results = reader.readtext(image)
+    
     raw_text = ""
     for bbox, text, prob in ocr_results:
         raw_text += text
-        
+        # 공백과 특수문자를 제거하여 cleaned_detected 변수 완성
         cleaned_detected = raw_text.replace(" ", "")
-        
+        # 디버깅용: 제대로 인식되었는지 화면에 출력해보기
         st.write(f"인식된 번호판: {cleaned_detected}")
 # 여기에 OCR 분석 및 직원 차량 확인 코드가 들어가면 됩니다!
-else:
+    else:
     st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 
        # 엑셀 데이터와 대조    
@@ -99,13 +100,13 @@ else:
         st.success("✅ **[등록된 직원 차량입니다]**")
         col1, col2 = st.columns(2)
         with col1:
-          st.write(f"**소속 구분:** {matched_row['구분']}")
-          st.write(f"**파트/팀:** {matched_row['파트/팀']}")
+          st.write(f"**근무파트:** {matched_row['근무파트']}")
           st.write(f"**성명:** {matched_row['성명']}")
-        with col2:
           st.write(f"**브랜드:** {matched_row['브랜드']}")
-          st.write(f"**차종/종류:** {matched_row['종류']}")
-          st.write(f"**등록 번호판:** {matched_row['번호판']}")
+        with col2:
+          st.write(f"**차종:** {matched_row['차종']}")
+          st.write(f"**색상:** {matched_row['색상']}")
+          st.write(f"**번호판:** {matched_row['번호판']}")
     else:
         st.error(
             "❌ **[미등록 차량(외부 차량)입니다]** 직원 차량 리스트에 일치하는"
