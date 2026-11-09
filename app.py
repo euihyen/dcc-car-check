@@ -70,7 +70,15 @@ if uploaded_file is not None:
     # 화면에 업로드된 이미지 보여주기
     st.image(image, channels="BGR", caption="업로드한 사진")
     
-    # 여기에 OCR 분석 및 직원 차량 확인 코드가 들어가면 됩니다!
+    ocr_results = reader.readtext(image)
+    raw_text = ""
+    for bbox, text, prob in ocr_results:
+        raw_text += text
+        
+        cleaned_detected = raw_text.replace(" ", "")
+        
+        st.write(f"인식된 번호판: {cleaned_detected}")
+# 여기에 OCR 분석 및 직원 차량 확인 코드가 들어가면 됩니다!
 else:
     st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 
