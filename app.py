@@ -1,24 +1,27 @@
-import cv2
-import easyocr
-import numpy as np
 import pandas as pd
 import streamlit as st
 
-# 페이지 설정
+# 페이지 설정 (모바일에서 화면이 꽉 차고 깔끔하게 보이도록 설정)
 st.set_page_config(
-    page_title="DCC점 직원 차량 확인 시스템", page_icon="🚗", layout="centered"
+    page_title="DCC점 직원 차량 조회", page_icon="🚗", layout="centered"
 )
 
-st.title("🚗 DCC점 직원 차량 확인 프로그램")
-st.write(
-    "주차장 진입 차량의 번호판 사진을 업로드하면 직원 차량 여부를 실시간으로"
-    " 확인합니다."
+# 모바일 화면에 맞춘 깔끔한 타이틀
+st.markdown(
+    "<h2 style='text-align: center; color: #333;'>🚗 DCC점 직원 차량 조회</h3>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p style='text-align: center; color: #666; font-size: 14px;'>차량 번호 또는"
+    " 성명을 입력하여 즉시 확인하세요</p>",
+    unsafe_allow_html=True,
 )
 
+# 엑셀 파일 경로
 purl = "DCC점_직원_소유_차량정보.xlsx"
 
 
-# 엑셀 데이터 로드
+# 엑셀 데이터 로드 함수 (시트 통합 처리)
 @st.cache_data
 def load_data():
   try:
@@ -38,79 +41,72 @@ def load_data():
     return None
 
 
-# EasyOCR 모델 로드 (상태 메시지 표시)
-@st.cache_resource
-def load_ocr_reader():
-  return easyocr.Reader(["ko", "en"])
+# 데이터 불러오기
+df_cars = load_data()
 
-
-with st.status(
-    "🔄 시스템 초기화 중... (AI 모델 로딩에는 1~2분이 소요될 수"
-    " 있습니다)",
-    expanded=True,
-) as status:
-  st.write("📊 엑셀 데이터를 불러오는 중...")
-  df_cars = load_data()
-
-  st.write(
-      "🤖 AI 번호판 인식 모델(EasyOCR)을 준비하는 중... (최초 실행 시 모델을"
-      " 다운로드합니다)"
-  )
-  reader = load_ocr_reader()
-  status.update(label="✅ 시스템 준비 완료!", state="complete", expanded=False)
-
-# 파일 업로더 생성
-uploaded_file = st.file_uploader(
-    "차량 번호판 사진을 업로드하세요", type=["jpg", "jpeg", "png"]
+# 검색 입력창 (모바일 키보드가 바로 올라오도록 구성)
+st.markdown("---")
+search_keyword = st.text_input(
+    "🔍 **검색어 입력**",
+    placeholder="차량번호 뒷자리 또는 성명 입력 (예: 1234 또는 홍길동)",
 )
 
-if uploaded_file is None:
-  st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
-else:
-  file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-  image = cv2.imdecode(file_bytes, 1)
-  st.image(image, channels="BGR", caption="업로드한 사진")
+# 검색 버튼 (모바일 화면에서 누르기 쉽게 크고 넓게 배치)
+search_clicked = st.button(
+    "🔍 조회하기", use_container_width=True, type="primary"
+)
 
-  if reader is not None and df_cars is not None:
-    with st.spinner("🔍 번호판을 분석 중입니다..."):
-      ocr_results = reader.readtext(image)
+if search_clicked or search_keyword:
+  if search_keyword.strip() == "":
+    st.warning("⚠️ 검색어를 입력해 주세요.")
+  elif df_cars is not None:
+    keyword = search_keyword.strip().replace(" ", "")
 
-      raw_text = ""
-      for bbox, text, prob in ocr_results:
-        raw_text += text
+    # 컬럼명 자동 감지
+    plate_col = "번호판" if "번호판" in df_cars.columns else "차량번호"
+    name_col = "성명" if "성명" in df_cars.columns else "근무파트"
 
-      cleaned_detected = raw_text.replace(" ", "")
-      st.info(f"🔍 인식된 텍스트: {cleaned_detected}")
+    # 검색어 포함 여부 확인 (번호판 또는 성명 기준)
+    matched_rows = df_cars[
+        df_cars[plate_col].astype(str).str.replace(" ", "").str.contains(keyword)
+        | df_cars[name_col]
+        .astype(str)
+        .str.replace(" ", "")
+        .str.contains(keyword)
+    ]
 
-      matched_row = None
-      plate_col = "번호판" if "번호판" in df_cars.columns else "차량번호"
+    st.markdown("---")
+    st.subheader("📌 조회 결과")
 
-      for index, row in df_cars.iterrows():
-        db_plate = str(row[plate_col]).replace(" ", "")
-        if db_plate in cleaned_detected or cleaned_detected in db_plate:
-          matched_row = row
-          break
+    if not matched_rows.empty:
+      st.success(
+          f"✅ 총 **{len(matched_rows)}건**의 일치하는 차량을 찾았습니다!"
+      )
 
-      st.markdown("---")
-      st.subheader("📌 판정 결과")
-
-      if matched_row is not None:
-        st.success("✅ **[등록된 직원 차량입니다]**")
-        col1, col2 = st.columns(2)
-        with col1:
-          st.write(
-              f"**근무파트:** {matched_row.get('근무파트', '정보 없음')}"
+      for idx, row in matched_rows.iterrows():
+        # 모바일 카드 형식으로 깔끔하게 박스 표현
+        with st.container():
+          st.markdown(
+              f"""
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #28a745;">
+                        <b style="font-size: 16px;">🚗 차량번호: {row.get(plate_col, '정보 없음')}</b><br>
+                        • <b>성명:</b> {row.get('성명', '정보 없음')}<br>
+                        • <b>근무파트:</b> {row.get('근무파트', '정보 없음')}<br>
+                        • <b>차종/색상:</b> {row.get('차종', '')} / {row.get('색상', '')}<br>
+                        • <b>구분:</b> {row.get('구분', '일반')}
+                    </div>
+                    """,
+              unsafe_allow_html=True,
           )
-          st.write(f"**성명:** {matched_row.get('성명', '정보 없음')}")
-          st.write(f"**브랜드:** {matched_row.get('브랜드', '정보 없음')}")
-        with col2:
-          st.write(f"**차종:** {matched_row.get('차종', '정보 없음')}")
-          st.write(f"**색상:** {matched_row.get('색상', '정보 없음')}")
-          st.write(f"**번호판:** {matched_row.get(plate_col, '정보 없음')}")
-      else:
-        st.error(
-            "❌ **[미등록 차량(외부 차량)입니다]** 직원 차량 리스트에 일치하는"
-            " 번호판이 없습니다."
-        )
+    else:
+      st.error("❌ **등록되지 않은 차량(외부 차량)입니다.**")
   else:
-    st.error("시스템 리소스가 정상적으로 로드되지 않았습니다.")
+    st.error("엑셀 데이터가 로드되지 않았습니다.")
+
+# 하단 안내 문구
+st.markdown("---")
+st.markdown(
+    "<p style='text-align: center; color: #999; font-size: 12px;'>성심당 DCC점"
+    " 주차관리 시스템</p>",
+    unsafe_allow_html=True,
+)
