@@ -15,11 +15,10 @@ st.write(
     " 확인합니다."
 )
 
-# 엑셀 파일 경로
 purl = "DCC점_직원_소유_차량정보.xlsx"
 
 
-# 1. 엑셀 데이터 로드 함수
+# 엑셀 데이터 로드
 @st.cache_data
 def load_data():
   try:
@@ -39,15 +38,26 @@ def load_data():
     return None
 
 
-# 2. EasyOCR 모델 로드 함수
+# EasyOCR 모델 로드 (상태 메시지 표시)
 @st.cache_resource
 def load_ocr_reader():
   return easyocr.Reader(["ko", "en"])
 
 
-# 데이터 및 모델 로드
-df_cars = load_data()
-reader = load_ocr_reader()
+with st.status(
+    "🔄 시스템 초기화 중... (AI 모델 로딩에는 1~2분이 소요될 수"
+    " 있습니다)",
+    expanded=True,
+) as status:
+  st.write("📊 엑셀 데이터를 불러오는 중...")
+  df_cars = load_data()
+
+  st.write(
+      "🤖 AI 번호판 인식 모델(EasyOCR)을 준비하는 중... (최초 실행 시 모델을"
+      " 다운로드합니다)"
+  )
+  reader = load_ocr_reader()
+  status.update(label="✅ 시스템 준비 완료!", state="complete", expanded=False)
 
 # 파일 업로더 생성
 uploaded_file = st.file_uploader(
@@ -57,13 +67,12 @@ uploaded_file = st.file_uploader(
 if uploaded_file is None:
   st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
 else:
-  # 이미지를 고정된 컨테이너에 표시
   file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
   image = cv2.imdecode(file_bytes, 1)
   st.image(image, channels="BGR", caption="업로드한 사진")
 
   if reader is not None and df_cars is not None:
-    with st.spinner("번호판을 분석 중입니다..."):
+    with st.spinner("🔍 번호판을 분석 중입니다..."):
       ocr_results = reader.readtext(image)
 
       raw_text = ""
@@ -73,7 +82,6 @@ else:
       cleaned_detected = raw_text.replace(" ", "")
       st.info(f"🔍 인식된 텍스트: {cleaned_detected}")
 
-      # 대조 로직
       matched_row = None
       plate_col = "번호판" if "번호판" in df_cars.columns else "차량번호"
 
@@ -83,7 +91,6 @@ else:
           matched_row = row
           break
 
-      # 결과 출력 영역
       st.markdown("---")
       st.subheader("📌 판정 결과")
 
