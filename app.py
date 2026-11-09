@@ -27,11 +27,11 @@ def load_data():
     df_jaegwa = pd.read_excel(purl, sheet_name="제과생산")
     df_jaegwa["구분"] = "제과생산"
     # 컬럼 이름 맞추기 (이름/성명, 근무파트/팀)
-    df_jaegwa = df_jaegwa.rename(columns={"근무파트": "파트/팀", "이름": "성명"})
+    df_jaegwa = df_jaegwa.rename(columns={"근무파트": "성명", "브랜드": "차종", "색상": "번호판"})
 
     df_jaebang = pd.read_excel(purl, sheet_name="제빵생산")
     df_jaebang["구분"] = "제빵생산"
-    df_jaebang = df_jaebang.rename(columns={"팀": "파트/팀", "제조사": "브랜드", "차종": "종류"})
+    df_jaebang = df_jaebang.rename(columns={"근무파트": "성명", "브랜드": "차종", "색상": "번호판"})
 
     # 데이터 통합
     df_total = pd.concat([df_jaegwa, df_jaebang], ignore_index=True)
