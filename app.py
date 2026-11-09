@@ -15,98 +15,78 @@ st.write(
     " 확인합니다."
 )
 
-# 엑셀 파일 경로 전역 변수
+# 엑셀 파일 경로
 purl = "DCC점_직원_소유_차량정보.xlsx"
 
 
-# 1. 엑셀 데이터 로드 함수 (시트 통합 처리)
+# 1. 엑셀 데이터 로드 함수
 @st.cache_data
 def load_data():
   try:
     df_total = pd.DataFrame()
-
-    # '제과생산' 시트 읽기 시도
-    try:
-      df_jaegwa = pd.read_excel(purl, sheet_name="제과생산")
-      df_jaegwa["구분"] = "제과생산"
-      df_total = pd.concat([df_total, df_jaegwa], ignore_index=True)
-    except Exception:
-      pass
-
-    # '제빵생산' 시트 읽기 시도
-    try:
-      df_jaebang = pd.read_excel(purl, sheet_name="제빵생산")
-      df_jaebang["구분"] = "제빵생산"
-      df_total = pd.concat([df_total, df_jaebang], ignore_index=True)
-    except Exception:
-      pass
-
-    # 시트가 따로 없고 기본 엑셀인 경우 대응
+    for sheet in ["제과생산", "제빵생산"]:
+      try:
+        df_sheet = pd.read_excel(purl, sheet_name=sheet)
+        df_sheet["구분"] = sheet
+        df_total = pd.concat([df_total, df_sheet], ignore_index=True)
+      except Exception:
+        pass
     if df_total.empty:
       df_total = pd.read_excel(purl)
-
     return df_total
   except Exception as e:
     st.error(f"엑셀 파일을 읽는 중 오류가 발생했습니다: {e}")
     return None
 
 
-df_cars = load_data()
-
-
-# 2. EasyOCR 모델 로드 함수 (캐싱 적용)
+# 2. EasyOCR 모델 로드 함수
 @st.cache_resource
 def load_ocr_reader():
   return easyocr.Reader(["ko", "en"])
 
 
-with st.spinner("AI 번호판 인식 모델을 불러오는 중입니다..."):
-  reader = load_ocr_reader()
+# 데이터 및 모델 로드
+df_cars = load_data()
+reader = load_ocr_reader()
 
 # 파일 업로더 생성
 uploaded_file = st.file_uploader(
     "차량 번호판 사진을 업로드하세요", type=["jpg", "jpeg", "png"]
 )
 
-if uploaded_file is not None:
-  # 파일을 바이트 배열로 변환 후 OpenCV 이미지로 디코딩
+if uploaded_file is None:
+  st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
+else:
+  # 이미지를 고정된 컨테이너에 표시
   file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
   image = cv2.imdecode(file_bytes, 1)
-
-  # 화면에 업로드된 이미지 표시
   st.image(image, channels="BGR", caption="업로드한 사진")
 
   if reader is not None and df_cars is not None:
     with st.spinner("번호판을 분석 중입니다..."):
-      # EasyOCR 실행
       ocr_results = reader.readtext(image)
 
       raw_text = ""
       for bbox, text, prob in ocr_results:
         raw_text += text
 
-      # 인식된 전체 텍스트에서 공백 제거
       cleaned_detected = raw_text.replace(" ", "")
       st.info(f"🔍 인식된 텍스트: {cleaned_detected}")
 
-      # 엑셀 데이터와 번호판 대조
+      # 대조 로직
       matched_row = None
-      for index, row in df_cars.iterrows():
-        # 엑셀의 번호판 데이터 가져오기 (컬럼명이 다를 경우 예외 처리)
-        plate_col = (
-            "번호판"
-            if "번호판" in row
-            else ("차량번호" if "차량번호" in row else row.index[0])
-        )
-        db_plate = str(row[plate_col]).replace(" ", "")
+      plate_col = "번호판" if "번호판" in df_cars.columns else "차량번호"
 
+      for index, row in df_cars.iterrows():
+        db_plate = str(row[plate_col]).replace(" ", "")
         if db_plate in cleaned_detected or cleaned_detected in db_plate:
           matched_row = row
           break
 
-      # 결과 출력
+      # 결과 출력 영역
       st.markdown("---")
       st.subheader("📌 판정 결과")
+
       if matched_row is not None:
         st.success("✅ **[등록된 직원 차량입니다]**")
         col1, col2 = st.columns(2)
@@ -126,6 +106,4 @@ if uploaded_file is not None:
             " 번호판이 없습니다."
         )
   else:
-    st.error("OCR 모델 또는 엑셀 데이터가 정상적으로 로드되지 않았습니다.")
-else:
-  st.info("👉 위 버튼을 눌러 차량 번호판 사진을 업로드해 주세요.")
+    st.error("시스템 리소스가 정상적으로 로드되지 않았습니다.")
