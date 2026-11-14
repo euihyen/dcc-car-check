@@ -26,7 +26,7 @@ purl = "DCC점_직원_소유_차량정보.xlsx"
 def load_data():
   try:
     df_total = pd.DataFrame()
-    for sheet in ["제과생산", "제빵생산"]:
+    for sheet in ["영업","제과생산", "제빵생산"]:
       try:
         df_sheet = pd.read_excel(purl, sheet_name=sheet)
         df_sheet["구분"] = sheet
